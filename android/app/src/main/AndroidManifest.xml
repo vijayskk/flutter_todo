@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.listmap">
    <application
-        android:label="listmap"
+        android:label="Todo app"
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
