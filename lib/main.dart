@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
@@ -28,13 +29,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<ToDo> quotes = [];
+  List<String> quotes = [];
 
   final _textController = TextEditingController();
-  final _authorController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    getTodo();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -49,45 +50,6 @@ class _MyHomePageState extends State<MyHomePage> {
               padding: const EdgeInsets.only(
                   top: 13.0, bottom: 8, left: 8, right: 8),
               child: Text(
-                "Pending",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Divider(),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: (quotes.length != 0)
-                  ? quotes.map((e) {
-                      if (!e.done) {
-                        return ListTile(
-                          title: Text(e.text),
-                          subtitle: Text(e.author),
-                          trailing: IconButton(
-                            icon: Icon(Icons.done),
-                            onPressed: () {
-                              setState(() {
-                                e.setasDone();
-                              });
-                            },
-                          ),
-                        );
-                      } else {
-                        return SizedBox(
-                          width: 0,
-                        );
-                      }
-                    }).toList()
-                  : [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: Text("Nothing yet"),
-                      )
-                    ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                  top: 13.0, bottom: 8, left: 8, right: 8),
-              child: Text(
                 "Done",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
@@ -97,24 +59,18 @@ class _MyHomePageState extends State<MyHomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: (quotes.length != 0)
                   ? quotes.map((e) {
-                      if (e.done) {
-                        return ListTile(
-                          title: Text(e.text),
-                          subtitle: Text(e.author),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () {
-                              setState(() {
-                                quotes.remove(e);
-                              });
-                            },
-                          ),
-                        );
-                      } else {
-                        return SizedBox(
-                          width: 0,
-                        );
-                      }
+                      return ListTile(
+                        title: Text(e),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            setState(() {
+                              quotes.remove(e);
+                              saveTodo();
+                            });
+                          },
+                        ),
+                      );
                     }).toList()
                   : [
                       Padding(
@@ -156,11 +112,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   thickness: 0,
                   height: 20,
                 ),
-                TextField(
-                  controller: _authorController,
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(), hintText: "Author name"),
-                ),
               ],
             ),
           ),
@@ -168,11 +119,10 @@ class _MyHomePageState extends State<MyHomePage> {
             TextButton(
               child: const Text('Add'),
               onPressed: () {
-                if (!(_textController.text == "" &&
-                    _authorController.text == "")) {
+                if (!(_textController.text == "")) {
                   setState(() {
-                    quotes.add(
-                        ToDo(_textController.text, _authorController.text));
+                    quotes.add(_textController.text);
+                    saveTodo();
                   });
                   Navigator.of(context).pop();
                 }
@@ -189,23 +139,23 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
-}
 
-class ToDo {
-  late String text;
-  late String author;
-  bool done = false;
-
-  ToDo(String text, String author) {
-    this.text = text;
-    this.author = author;
+  saveTodo() async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    await sp.setStringList('todo', quotes);
   }
 
-  void setasDone() {
-    this.done = true;
-  }
-
-  void setasUnDone() {
-    this.done = false;
+  getTodo() async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    List<String>? todo = sp.getStringList('todo');
+    if (todo != null) {
+      setState(() {
+        quotes = todo;
+      });
+    } else {
+      setState(() {
+        quotes = [];
+      });
+    }
   }
 }
